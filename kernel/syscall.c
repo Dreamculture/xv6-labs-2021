@@ -104,6 +104,7 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_wait(void);
 extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
+extern uint64 sys_trace(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -127,6 +128,33 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_trace]   sys_trace,
+};
+
+//array of system names to index into 
+static char* syscall_name[] = {
+[SYS_fork]    "fork",
+[SYS_exit]    "exit",
+[SYS_wait]    "wait",
+[SYS_pipe]    "pipe",
+[SYS_read]    "read",
+[SYS_kill]    "kill",
+[SYS_exec]    "exec",
+[SYS_fstat]   "fstat",
+[SYS_chdir]   "chdir",
+[SYS_dup]     "dup",
+[SYS_getpid]  "getpid",
+[SYS_sbrk]    "sbrk",
+[SYS_sleep]   "sleep",
+[SYS_uptime]  "uptime",
+[SYS_open]    "open",
+[SYS_write]   "write",
+[SYS_mknod]   "mknod",
+[SYS_unlink]  "unlink",
+[SYS_link]    "link",
+[SYS_mkdir]   "mkdir",
+[SYS_close]   "close",
+[SYS_trace]   "trace",
 };
 
 void
@@ -134,13 +162,49 @@ syscall(void)
 {
   int num;
   struct proc *p = myproc();
+  int a;
 
   num = p->trapframe->a7;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    p->trapframe->a0 = syscalls[num]();
+    /* execute the syscall and store return value */
+    a = p->trapframe->a0 = syscalls[num]();
+
+    /* trace based on current mask (after syscall) */
+    if (p->mask & (1 << num)) {
+      printf("%d: syscall %s -> %d\n", p->pid, syscall_name[num], a);
+    }
   } else {
+    printf("%d %s: unknown sys call %d\n", p->pid, p->name, num);
+    p->trapframe->a0 = -1;
+  }
+}
+
+/*
+void
+syscall(void)
+{
+  int num;
+  struct proc *p = myproc();
+  int a;
+  int mask;
+  num = p->trapframe->a7;
+  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    int before_mask = p->mask;
+    a = p->trapframe->a0 = syscalls[num]();
+    mask = p->mask;
+    if(num == SYS_trace){
+      if(before_mask & (1<<num))
+      printf("%d: syscall %s -> %d\n", p->pid , syscall_name[num],a);
+    }
+    else{
+      if(mask & (1<<num))
+      printf("%d: syscall %s -> %d\n", p->pid , syscall_name[num],a);
+  }
+}
+  else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);
     p->trapframe->a0 = -1;
   }
 }
+*/
