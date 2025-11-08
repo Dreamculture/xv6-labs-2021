@@ -120,13 +120,19 @@ void testproc() {
   }
 }
 
+
 int
 main(int argc, char *argv[])
 {
   printf("sysinfotest: start\n");
+  //struct sysinfo info;
+  //sysinfo(&info);
+  
   testcall();
+  
   testmem();
   testproc();
   printf("sysinfotest: OK\n");
+  
   exit(0);
 }

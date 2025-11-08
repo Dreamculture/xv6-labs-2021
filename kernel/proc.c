@@ -657,3 +657,20 @@ procdump(void)
     printf("\n");
   }
 }
+
+//collect the number of processes 
+int
+procnumget(void){
+  struct proc *p;
+  int counter = NPROC;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->state == UNUSED) {
+      counter--;
+      release(&p->lock);
+    } else {
+      release(&p->lock);
+    }
+  }
+  return counter;
+}
